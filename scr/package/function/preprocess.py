@@ -43,12 +43,12 @@ def statistics(img_path, type ='RGB'):
         features = {}
         for i, channel in enumerate(channels):
             features[f'mean_{channel}'] = img_array[:, :, i].mean()
-            features[f'max_{channel}'] = img_array[:, :, i].max()
-            features[f'min_{channel}'] = img_array[:, :, i].min()
+            # features[f'max_{channel}'] = img_array[:, :, i].max()
+            # features[f'min_{channel}'] = img_array[:, :, i].min()
             features[f'median_{channel}'] = np.median(img_array[:, :, i])
             features[f'var_{channel}'] = img_array[:, :, i].var()
     
-    #将特征集转换为一个     
+    #将特征集转换为一个列表
     features = list(features.values())
     return features
  
@@ -70,7 +70,7 @@ def batch_processing(folder, type = 'RGB'):
         else:
              print(f"Error loading image {img_path}")
     np.save(os.path.join(folder, '../../../', 'cache', 'img_features_{}.npy'.format(type)), img_features)    
-    return img_features 
+    return np.array(img_features)
 
 
 
