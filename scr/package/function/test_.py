@@ -27,32 +27,38 @@ def test_preprocess():
  # Return :     
 """ 
 def test_models():
-    # 机器模型训练
-    # model_training_ML('RGB')
-    # model_training_ML('HSV')
-
-    # 机器模型预测
-    # predictions_RGB = model_predictions_ML('../../storage/data/tongue/abnormal', 'RGB')
+    # 机器模型训练及预测
+    # model_training_ML('../../storage/data/tongue/normal', 'RGB')
+    # result = model_predict_ML('../../storage/data/tongue/abnormal', 'RGB')
     # count_error = 0
-    # for key, value in predictions_RGB.items():
+    # for key, value in result.items():
     #     if value == 1:
     #         count_error += 1
     #         print(key, value)
     # print(f'误判为正常图片有{count_error}个')
 
-    # # 格式化输出
-    # predictions_RGB = model_predictions_ML('../../storage/data/tongue/normal', 'RGB')
+    # 人工模型训练及预测
+    # model_training_HM('../../storage/data/tongue/normal','HSV')
+    # result = model_predict_HM('../../storage/data/tongue/abnormal', 'HSV')
     # count_error = 0
-    # for key, value in predictions_RGB.items():
-    #     if value == -1:
+    # for key, value in result.items():
+    #    if value == 1:
     #         count_error += 1
     #         print(key, value)
-    # print(f'误判为错误图片有{count_error}个')
+    # print(f'误判为正常图片有{count_error}个')
 
-    # 人工模型训练及预测
-    model_training_HM('../../storage/data/tongue/normal', 'RGB')
-    result = model_predicting_HM('../../storage/data/tongue/abnormal', 'RGB')
-    for key, value in result.items():
-        print(key, value)
+    # 机器模型评估测试
+    evaluations = model_evaluate('../../storage/data/tongue/abnormal', 
+                   '../../storage/data/tongue/abnormal', 'normal', 'abnormal',
+                   'IF', 'RGB')
+    print(f'Accuracy = {evaluations[0]}, Error_rate = {evaluations[1]}, F1_Score = {evaluations[2]}')
 
+    # 人工模型评估测试
+    # evaluations = model_evaluate('../../storage/data/tongue/abnormal', 
+    #                '../../storage/data/tongue/abnormal', 'normal', 'abnormal',
+    #                'HM', 'HSV')
+    # print(f'Accuracy = {evaluations[0]}, Error_rate = {evaluations[1]}, F1_Score = {evaluations[2]}')
+
+
+    
     return 

@@ -5,16 +5,18 @@ from scr.package.function.preprocess import*
 
 """
  # Describe :   使用孤立森林模型拟合模型
- # Parameter :  type 图像模型 
+ # Parameter :  
+ #      parameter1 train_path 训练数据集路径 
+ #      parameter2 type 图像模型 
  # Return :     
 """  
-def model_training_ML(type = 'RGB'):
+def model_training_ML(train_path ,type = 'RGB'):
     # 导入训练集
-    normal_data = np.load(f'../../storage/cache/img_features_{type}.npy')
+    train_set = batch_processing(train_path, type)
    
     #模型训练
     model = IsolationForest(contamination=0.145, random_state=27)
-    model_IF = model.fit(normal_data)
+    model_IF = model.fit(train_set)
     
     #保存模型
     with open(f'../../storage/cache/model_{type}.pkl', 'wb') as file:
@@ -29,14 +31,7 @@ def model_training_ML(type = 'RGB'):
         parameter 2:    type 图像类型 
  # Return :     predictions 返回一个预测结果字典
 """  
-def model_predictions_ML(predict_path, type):
-    #字典分类器
-    dim_mapping = {
-    'RGB': 15,
-    'HSV': 9
-    }
-    dim = dim_mapping.get(type, None) 
-
+def model_predict_ML(predict_path, type):
     # 加载模型
     with open(f'../../storage/cache/model_{type}.pkl', 'rb') as file:
         loaded_model = pickle.load(file)
@@ -45,7 +40,8 @@ def model_predictions_ML(predict_path, type):
     # 模型预测
     for filename in os.listdir(predict_path):
         img = os.path.join(predict_path, filename)
-        img_features = np.array(statistics(img, type)).reshape(1,dim)
+        img_features = statistics(img, type)
+        img_features = img_features.reshape(1, -1)
         result[filename] = loaded_model.predict(img_features)
 
     return result
@@ -58,14 +54,14 @@ def model_predictions_ML(predict_path, type):
  #      parameter2 : type 图像模型
  # Return :     weight_list 返回训练完的权值
 """  
-def model_training_HM(training_path, type):
+def model_training_HM(train_path, type):
     """
     # 模型创建: 根据统计特征人工设计一个模型
     # 模型原理: 计算各训练集各参数的的统计特征, 根据模统计特征计算出95%的置信区间,
                 再根据训练集各参数在95%的置信区间的个数, 归一化作为权值当作模型
     """  
     # 导入训练集
-    train_set = batch_processing(training_path, type)
+    train_set = batch_processing(train_path, type)
     trained_range = []
     num_columns = train_set.shape[1]# 列数
 
@@ -91,22 +87,12 @@ def model_training_HM(training_path, type):
     access_train_set = [] 
     train_counter = 0 
     num_columns = len(trained_range)
-
-    # 字典分类器
-    dim_mapping = {
-    'RGB': 15,
-    'HSV': 9
-    }
-    dim = dim_mapping.get(type, None)  
     
     # 用训练集训练得出权值
-    for filename in os.listdir(training_path):
-        img = os.path.join(training_path, filename)
-        predicted_value = np.array(statistics(img, type)).reshape(1,dim)
-        
+    for train_data in train_set:    
         #训练样本的参数是否在95%置信区间内{'Y': 1,'N': -1}
         for column_index in range(num_columns):
-            if (trained_range[column_index][0] <= predicted_value[0, column_index] 
+            if (trained_range[column_index][0] <= train_data[column_index] 
                 <= trained_range[column_index][1]):
                 access_train.append(1)
             else:
@@ -133,25 +119,17 @@ def model_training_HM(training_path, type):
     
 
 """
- # Describe :   人工预测训练
+ # Describe :   人工模型预测
  # Parameter :  
  #      parameter1 : predict_path 预测集路径
  #      parameter2 : type 图像模型
  # Return :     result 返回预测结果,类型是一个字典
 """  
-def model_predicting_HM(predict_path, type):
+def model_predict_HM(predict_path, type):
     # 模型导入
     weight_list = np.load(f'../../storage/cache/weight_list_HM_{type}.npy')
     trained_range = np.load(f'../../storage/cache/trained_range_HM_{type}.npy')
     num_columns = len(trained_range)
-
-    # 字典分类器
-    dim_mapping = {
-    'RGB': 15,
-    'HSV': 9
-    }
-    dim = dim_mapping.get(type, None)  
-
     # 中间变量
     access = []
     result = {}
@@ -159,11 +137,12 @@ def model_predicting_HM(predict_path, type):
     # 判别图像
     for filename in os.listdir(predict_path):
         img = os.path.join(predict_path, filename)
-        predicted_value = np.array(statistics(img, type)).reshape(1,dim)
+        predicted_value = np.array(statistics(img, type)).reshape(1, -1)
         
         #预测样本的参数是否在95置信区间内{'Y': 1,'N': -1}
         for column_index in range(num_columns):
-            if trained_range[column_index][0] <= predicted_value[0, column_index] <= trained_range[column_index][1]:
+            if (trained_range[column_index][0] <= predicted_value[0, column_index] 
+                <= trained_range[column_index][1]):
                 access.append(1)
             else:
                 access.append(-1)
@@ -178,3 +157,54 @@ def model_predicting_HM(predict_path, type):
         access = []
         score_perdict = 0
     return result
+
+
+"""
+ # Describe :   模型评估
+ # Parameter :  
+ #      parameter1 : data_set_path1 数据集1路径
+ #      parameter2 : data_set_path2 数据集2路径
+ #      parameter3 : data_set_type1 数据集类型(正确数据集或错误数据集)
+ #      parameter4 : data_set_type2 数据集类型(正确数据集或错误数据集)
+ #      parameter5 : models 评估模型的类型
+ #      parameter6 : type 图像模型的类型
+ # Return :     Accuracy, Error_rate, F1_Score 组成的元组作为评估的依据   
+"""  
+def model_evaluate(data_set_path1, data_set_path2, data_set_type1 = 'normal', 
+                   data_set_type2 = 'abnormal', models = 'IF', type = 'RGB'): 
+    # 初始化中间变量
+    TP, TN, FP, FN = 0, 0, 0, 0
+    model_dict = {
+        'IF': model_predict_ML,
+        'HM': model_predict_HM
+    }
+    model = model_dict.get(models)
+    if model:
+        result1 = model(data_set_path1, type)
+        result2 = model(data_set_path2, type)
+    
+    # 根据混淆矩阵定义更新函数
+    def update_counts(result, standard):
+        nonlocal TP, TN, FP, FN
+        for value in result.values():
+            if value == standard:
+                TP += 1
+            else:
+                if standard == 1:
+                    TN += 1
+                else:
+                    FP += 1
+                    FN += 1
+
+    # 计算混淆矩阵
+    standard1 = 1 if data_set_type1 == 'normal' else -1
+    update_counts(result1, standard1)
+
+    standard2 = 1 if data_set_type2 == 'normal' else -1
+    update_counts(result2, standard2)
+
+   
+    Accuracy = (TP+TN)/(TP+FN+FP+TN)
+    Error_rate = (FP+FN)/(TP+FN+FP+TN)
+    F1_Score = 2 * TP / (2 * TP + FP + FN)
+    return Accuracy, Error_rate, F1_Score

@@ -33,8 +33,8 @@ def statistics(img_path, type ='RGB'):
         features = {}
         for i, channel in enumerate(channels):
             features[f'mean_{channel}'] = img_array[:, :, i].mean()
-            features[f'max_{channel}'] = img_array[:, :, i].max()
-            features[f'min_{channel}'] = img_array[:, :, i].min()
+            # features[f'max_{channel}'] = img_array[:, :, i].max()
+            # features[f'min_{channel}'] = img_array[:, :, i].min()
             features[f'median_{channel}'] = np.median(img_array[:, :, i])
             features[f'var_{channel}'] = img_array[:, :, i].var()
 
@@ -43,13 +43,14 @@ def statistics(img_path, type ='RGB'):
         features = {}
         for i, channel in enumerate(channels):
             features[f'mean_{channel}'] = img_array[:, :, i].mean()
-            # features[f'max_{channel}'] = img_array[:, :, i].max()
-            # features[f'min_{channel}'] = img_array[:, :, i].min()
+            #features[f'max_{channel}'] = img_array[:, :, i].max()
+            #features[f'min_{channel}'] = img_array[:, :, i].min()
             features[f'median_{channel}'] = np.median(img_array[:, :, i])
             features[f'var_{channel}'] = img_array[:, :, i].var()
     
     #将特征集转换为一个列表
     features = list(features.values())
+    features = np.array(features)
     return features
  
 
