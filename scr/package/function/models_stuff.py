@@ -10,7 +10,7 @@ from scr.package.function.preprocess import*
  #      parameter2 type 图像模型 
  # Return :     
 """  
-def model_training_ML(train_path ,type = 'RGB'):
+def model_training_IF(train_path ,type = 'RGB'):
     # 导入训练集
     train_set = batch_processing(train_path, type)
    
@@ -19,7 +19,7 @@ def model_training_ML(train_path ,type = 'RGB'):
     model_IF = model.fit(train_set)
     
     #保存模型
-    with open(f'../../storage/cache/model_{type}.pkl', 'wb') as file:
+    with open(f'scr/storage/cache/model_{type}.pkl', 'wb') as file:
        pickle.dump(model_IF, file)
     return
 
@@ -31,9 +31,9 @@ def model_training_ML(train_path ,type = 'RGB'):
         parameter 2:    type 图像类型 
  # Return :     predictions 返回一个预测结果字典
 """  
-def model_predict_ML(predict_path, type):
+def model_predict_IF(predict_path, type):
     # 加载模型
-    with open(f'../../storage/cache/model_{type}.pkl', 'rb') as file:
+    with open(f'scr/storage/cache/model_{type}.pkl', 'rb') as file:
         loaded_model = pickle.load(file)
     result={}
 
@@ -43,7 +43,7 @@ def model_predict_ML(predict_path, type):
         img_features = statistics(img, type)
         img_features = img_features.reshape(1, -1)
         result[filename] = loaded_model.predict(img_features)
-
+    
     return result
 
 
@@ -112,8 +112,8 @@ def model_training_HM(train_path, type):
                    for x in column_count]  
     
     # 模型保存
-    np.save(f'../../storage/cache/trained_range_HM_{type}.npy', trained_range)
-    np.save(f'../../storage/cache/weight_list_HM_{type}.npy', weight_list)
+    np.save(f'scr/storage/cache/trained_range_HM_{type}.npy', trained_range)
+    np.save(f'scr/storage/cache/weight_list_HM_{type}.npy', weight_list)
 
     return 
     
@@ -127,8 +127,8 @@ def model_training_HM(train_path, type):
 """  
 def model_predict_HM(predict_path, type):
     # 模型导入
-    weight_list = np.load(f'../../storage/cache/weight_list_HM_{type}.npy')
-    trained_range = np.load(f'../../storage/cache/trained_range_HM_{type}.npy')
+    weight_list = np.load(f'scr/storage/cache/weight_list_HM_{type}.npy')
+    trained_range = np.load(f'scr/storage/cache/trained_range_HM_{type}.npy')
     num_columns = len(trained_range)
     # 中间变量
     access = []
@@ -168,43 +168,51 @@ def model_predict_HM(predict_path, type):
  #      parameter4 : data_set_type2 数据集类型(正确数据集或错误数据集)
  #      parameter5 : models 评估模型的类型
  #      parameter6 : type 图像模型的类型
- # Return :     Accuracy, Error_rate, F1_Score 组成的元组作为评估的依据   
+ # Return :     
 """  
 def model_evaluate(data_set_path1, data_set_path2, data_set_type1 = 'normal', 
                    data_set_type2 = 'abnormal', models = 'IF', type = 'RGB'): 
-    # 初始化中间变量
-    TP, TN, FP, FN = 0, 0, 0, 0
+    # 初始化混淆矩阵变量
+    Matrix = {
+        'TP' : 0,
+        'TN' : 0,
+        'FP' : 0,
+        'FN' : 0
+    }
     model_dict = {
-        'IF': model_predict_ML,
+        'IF': model_predict_IF,
         'HM': model_predict_HM
     }
     model = model_dict.get(models)
     if model:
         result1 = model(data_set_path1, type)
         result2 = model(data_set_path2, type)
-    
+        
     # 根据混淆矩阵定义更新函数
-    def update_counts(result, standard):
-        nonlocal TP, TN, FP, FN
+    def update_counts(result, standard, Matrix):
         for value in result.values():
-            if value == standard:
-                TP += 1
-            else:
-                if standard == 1:
-                    TN += 1
+            if (standard == 1):
+                if (value == standard):
+                     Matrix['TP'] += 1  
                 else:
-                    FP += 1
-                    FN += 1
+                     Matrix['FN'] += 1  
+            else:
+                if (value == standard):
+                    Matrix['TN'] += 1  
+                else:
+                    Matrix['FP'] += 1  
 
-    # 计算混淆矩阵
-    standard1 = 1 if data_set_type1 == 'normal' else -1
-    update_counts(result1, standard1)
-
-    standard2 = 1 if data_set_type2 == 'normal' else -1
-    update_counts(result2, standard2)
 
    
-    Accuracy = (TP+TN)/(TP+FN+FP+TN)
-    Error_rate = (FP+FN)/(TP+FN+FP+TN)
-    F1_Score = 2 * TP / (2 * TP + FP + FN)
-    return Accuracy, Error_rate, F1_Score
+    # 计算混淆矩阵
+    standard1 = 1 if data_set_type1 == 'normal' else -1
+    update_counts(result1, standard1, Matrix)
+    standard2 = 1 if data_set_type2 == 'normal' else -1
+    update_counts(result2, standard2, Matrix)
+    print(Matrix)
+    
+    Accuracy = (Matrix['TP'] + Matrix['TN']) / (Matrix['TP'] + Matrix['FN'] + Matrix['FP'] +Matrix['TN'])
+    Error_rate = (Matrix['FP'] + Matrix['FN']) / (Matrix['TP'] + Matrix['FN'] + Matrix['FP'] + Matrix['TN'])
+    F1_Score = 2 * Matrix['TP'] / (2 * Matrix['TP'] + Matrix['FP'] + Matrix['FN'])
+    print(Accuracy, Error_rate, F1_Score)
+    return 
