@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 from .preprocess import *
 from .models_stuff import *
+from .data_enhancement import *
 
 """
  # Describe :  测试load_preprocess模块
@@ -57,6 +58,16 @@ def test_models():
     #                '../../storage/data/tongue/abnormal', 'normal', 'abnormal',
     #                'HM', 'RGB')
     return 
+
+
+"""
+ # Describe :  测试data_enhancement
+ # Parameter :
+ # Return :     
+""" 
+def test_models():
+    # augment_images('../../storage/data/tongue/abnormal', '../../storage/data/tongue/abnormal_augmented', 5)
+    return
 
 #3参数
 # HSV

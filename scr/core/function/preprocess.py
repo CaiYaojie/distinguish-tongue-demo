@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import cv2
 import os
 """
@@ -34,7 +33,7 @@ def statistics(img_path, type ='RGB'):
         for i, channel in enumerate(channels):
             features[f'mean_{channel}'] = img_array[:, :, i].mean()
             features[f'max_{channel}'] = img_array[:, :, i].max()
-            features[f'min_{channel}'] = img_array[:, :, i].min()
+            # features[f'min_{channel}'] = img_array[:, :, i].min()
             features[f'median_{channel}'] = np.median(img_array[:, :, i])
             features[f'std_{channel}'] = img_array[:, :, i].std()
 
@@ -45,6 +44,7 @@ def statistics(img_path, type ='RGB'):
             features[f'mean_{channel}'] = img_array[:, :, i].mean()
             features[f'max_{channel}'] = img_array[:, :, i].max()
             features[f'min_{channel}'] = img_array[:, :, i].min()
+            features[f'mode_{channel}'] = np.argmax(np.bincount(img_array[:, :, i].flatten()))
             features[f'median_{channel}'] = np.median(img_array[:, :, i])
             features[f'std_{channel}'] = img_array[:, :, i].std()
     
