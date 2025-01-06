@@ -1,7 +1,6 @@
 import pickle
-import shutil
+import math
 from scipy import stats
-import random
 from sklearn.ensemble import IsolationForest
 from scr.core.function.preprocess import*
 
@@ -21,7 +20,7 @@ def model_training_IF(train_path ,type = 'RGB'):
     model_IF = model.fit(train_set)
     
     #保存模型
-    with open(f'scr/storage/cache/model_{type}.pkl', 'wb') as file:
+    with open(f'scr/storage/cache/IF_model/model_{type}.pkl', 'wb') as file:
        pickle.dump(model_IF, file)
     return
 
@@ -35,7 +34,7 @@ def model_training_IF(train_path ,type = 'RGB'):
 """  
 def model_predict_IF(predict_path, type):
     # 加载模型
-    with open(f'scr/storage/cache/model_{type}.pkl', 'rb') as file:
+    with open(f'scr/storage/best_model/IF_model/model_{type}.pkl', 'rb') as file:
         loaded_model = pickle.load(file)
     result={}
 
@@ -114,8 +113,8 @@ def model_training_HM(train_path, type):
                    for x in column_count]  
         
     # 模型保存
-    np.save(f'scr/storage/cache/trained_range_HM_{type}.npy', trained_range)
-    np.save(f'scr/storage/cache/weight_list_HM_{type}.npy', weight_list)
+    np.save(f'scr/storage/cache/HM_model/trained_range_HM_{type}.npy', trained_range)
+    np.save(f'scr/storage/cache/HM_model/weight_list_HM_{type}.npy', weight_list)
 
     
     return weight_list
@@ -130,8 +129,8 @@ def model_training_HM(train_path, type):
 """  
 def model_predict_HM(predict_path, type):
     # 模型导入
-    weight_list = np.load(f'scr/storage/cache/weight_list_HM_{type}.npy')
-    trained_range = np.load(f'scr/storage/cache/trained_range_HM_{type}.npy')
+    weight_list = np.load(f'scr/storage/best_model/HM_model/weight_list_HM_{type}.npy')
+    trained_range = np.load(f'scr/storage/best_model/HM_model/trained_range_HM_{type}.npy')
     num_columns = len(trained_range)
     # 中间变量
     access = []
@@ -154,8 +153,8 @@ def model_predict_HM(predict_path, type):
         score_perdict = sum(np.multiply(weight_list, access))
 
         # 预测结果
-        result[filename] = -1 if score_perdict < 0 else 1
-
+        result[filename] = -1 if score_perdict < 0.3  else 1
+        
         # 初始化中间变量, 继续进行预测
         access = []
         score_perdict = 0
@@ -214,52 +213,48 @@ def model_evaluate(data_set_path1, data_set_path2, data_set_type1 = 'normal',
     update_counts(result2, standard2, Matrix)
     print(Matrix)
     
-    Accuracy = (Matrix['TP'] + Matrix['TN']) / (Matrix['TP'] + Matrix['FN'] + Matrix['FP'] +Matrix['TN'])
-    Error_rate = (Matrix['FP'] + Matrix['FN']) / (Matrix['TP'] + Matrix['FN'] + Matrix['FP'] + Matrix['TN'])
-    F1_Score = 2 * Matrix['TP'] / (2 * Matrix['TP'] + Matrix['FP'] + Matrix['FN'])
-    print(Accuracy, Error_rate, F1_Score)
+    A = (Matrix['TP'] + Matrix['TN']) / (Matrix['TP'] + Matrix['FN'] + Matrix['FP'] +Matrix['TN'])
+    P = Matrix['TP'] / (Matrix['TP'] + Matrix['FP'])
+    R = Matrix['TP'] / (Matrix['TP'] + Matrix['FN'])
+    F = 2 * P * R / (P + R)
+    MCC = (((Matrix['TP'] * Matrix['TN']) - (Matrix['FP'] * Matrix['FN'])) / 
+           math.sqrt((Matrix['TP'] + Matrix['FP']) * (Matrix['TP'] + Matrix['FN']) * (Matrix['TN'] + Matrix['FP']) * (Matrix['TN'] + Matrix['FN'])))
+    print(f'A = {A}, P = {P}, R = {R}, F = {F}, MCC = {MCC}')
 
-    return [Accuracy, Error_rate, F1_Score]
-
+    np.save(f'scr/storage/cache/{models}_model/result_{type}.npy', [A, P, R, F, MCC])
+    return [A, P, R, F, MCC]
 
 """
- # Describe :   模型测试集生成
+ # Describe :    保存训练效果最好的模型
  # Parameter :  
- #      parameter1 : data_set_path1 数据集1路径
- #      parameter2 : data_set_path2 数据集2路径
- #      parameter3 : data_set_type1 数据集类型(正确数据集或错误数据集)
- #      parameter4 : data_set_type2 数据集类型(正确数据集或错误数据集)
- #      parameter5 : num_images 每个数据集选取个数
+ #      parameter1 : result 模型评价结果
+ #      parameter2 : input_dir 保存模型路径
+ #      parameter3 : save_dir 保存模型路径
+ #      parameter3 : type 模型类型
  # Return :     
 """  
-def random_test_imgs(data_set_path1, data_set_path2, target_path, data_set_type1 = 'normal', 
-                   data_set_type2 = 'abnormal', num_images = 10):
-    # 创建目标文件夹，如果不存在
-    if not os.path.exists(target_path):
-        os.makedirs(target_path)
+def best_model_save(result, input_dir, save_dir, type):
+    def copy_files(src_dir, dest_dir):
+        # 遍历源目录中的所有文件
+        for filename in os.listdir(src_dir):
+            # 构建源文件和目标文件的完整路径
+            src_file = os.path.join(src_dir, filename)
+            dest_file = os.path.join(dest_dir, filename)
+
+            # 检查是否是文件（而不是目录）
+            if os.path.isfile(src_file):
+                shutil.copy(src_file, dest_file)
+
+    # 如果save文件夹存在
+    if os.path.exists(save_dir):
+        if len(os.listdir(save_dir)) == 0:
+            copy_files(input_dir, save_dir)
+            return
     else:
-        return
+        # 加载模型结果
+        result_temp = np.load(f'scr/storage/cache/{type}_model/result_HSV.npy')
+        # 检查条件
+        if np.any(result > result_temp):
+            copy_files(input_dir, save_dir)
 
-    # 创建子文件夹
-    subfolder_1 = os.path.join(target_path, data_set_type1)
-    subfolder_2 = os.path.join(target_path, data_set_type2)
-
-    os.makedirs(subfolder_1, exist_ok=True)
-    os.makedirs(subfolder_2, exist_ok=True)
-
-    # 从文件夹1中随机选择图片
-    images_1 = os.listdir(data_set_path1)
-    selected_images_1 = random.sample(images_1, min(num_images, len(images_1)))
-
-    # 从文件夹2中随机选择图片
-    images_2 = os.listdir(data_set_path2)
-    selected_images_2 = random.sample(images_2, min(num_images, len(images_2)))
-
-    # 复制选中的图片到目标文件夹
-    for image in selected_images_1:
-        shutil.copy(os.path.join(data_set_path1, image), subfolder_1)
-
-    for image in selected_images_2:
-        shutil.copy(os.path.join(data_set_path2, image), subfolder_2)
-        
-    return 
+    return

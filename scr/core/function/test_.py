@@ -49,14 +49,14 @@ def test_models():
     # print(f'误判为正常图片有{count_error}个')
 
     # 机器模型评估测试
-    # evaluations = model_evaluate('../../storage/data/tongue/normal', 
-    #                '../../storage/data/tongue/abnormal', 'normal', 'abnormal',
-    #                'IF', 'HSV')
+    evaluations = model_evaluate('../../storage/data/tongue/normal', 
+                   '../../storage/data/tongue/abnormal', 'normal', 'abnormal',
+                   'IF', 'HSV')
 
     # 人工模型评估测试
-    # evaluations = model_evaluate('../../storage/data/tongue/normal_', 
-    #                '../../storage/data/tongue/abnormal', 'normal', 'abnormal',
-    #                'HM', 'RGB')
+    evaluations = model_evaluate('../../storage/data/tongue/normal_', 
+                   '../../storage/data/tongue/abnormal', 'normal', 'abnormal',
+                   'HM', 'RGB')
     return 
 
 

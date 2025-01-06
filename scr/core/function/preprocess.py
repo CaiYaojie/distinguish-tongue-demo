@@ -1,6 +1,8 @@
 import numpy as np
 import cv2
 import os
+import shutil
+import random
 """
  # Describe :   根据参数加载一张RGB或HSV的图像
  # Parameter :
@@ -32,7 +34,7 @@ def statistics(img_path, type ='RGB'):
         features = {}
         for i, channel in enumerate(channels):
             features[f'mean_{channel}'] = img_array[:, :, i].mean()
-            features[f'max_{channel}'] = img_array[:, :, i].max()
+            # features[f'max_{channel}'] = img_array[:, :, i].max()
             # features[f'min_{channel}'] = img_array[:, :, i].min()
             features[f'median_{channel}'] = np.median(img_array[:, :, i])
             features[f'std_{channel}'] = img_array[:, :, i].std()
@@ -73,7 +75,41 @@ def batch_processing(folder, type = 'RGB'):
     return np.array(img_features)
 
 
+"""
+ # Describe :    将图片数据集分割为训练集和测试集
+ # Parameter :  
+ #      parameter1 : input_dir 输入数据集路径
+ #      parameter2 : output_dir 输出数据集路径, 用于保存训练集和测试集
+ #      parameter3 : train_size 训练集与数据集分割比例
+ #      parameter4 : type 数据集类型
+ # Return :     
+"""  
+def split_image_dataset(input_dir, output_dir, train_size = 0.8, type = 'normal'):
+    # 获取所有图片文件
+    all_images = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
 
-        
+    # 打乱图片列表
+    random.shuffle(all_images)
+
+    # 计算训练集和测试集的分割点
+    train_count = int(len(all_images) * train_size)
+
+    # 划分训练集和测试集
+    train_images = all_images[:train_count]
+    test_images = all_images[train_count:]
+
+    # 创建输出目录
+    train_dir = os.path.join(output_dir, f'{type}_train')
+    test_dir = os.path.join(output_dir, f'{type}_test')
+    os.makedirs(train_dir, exist_ok=True)
+    os.makedirs(test_dir, exist_ok=True)
+
+    # 复制训练集图片
+    for img in train_images:
+        shutil.copy(os.path.join(input_dir, img), os.path.join(train_dir, img))
+
+    # 复制测试集图片
+    for img in test_images:
+        shutil.copy(os.path.join(input_dir, img), os.path.join(test_dir, img))
 
 
