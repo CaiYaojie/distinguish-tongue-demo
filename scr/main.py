@@ -23,13 +23,13 @@ def main():
     split_image_dataset(dataset['normal'], test_imgs, 0.7, 'normal')
     split_image_dataset(dataset['abnormal_augmented'], test_imgs, 0.7, 'abnormal')
 
-    # # 模型训练
-    # for i in picture_type:
-    #     for j in model_type:
-    #         if (j == 'IF'):
-    #             model_training_IF(os.path.join(current_dir, 'storage/cache/test_imgs/normal_train'), i)
-    #         else:
-    #             model_training_HM(os.path.join(current_dir, 'storage/cache/test_imgs/normal_train'), i)
+    # 模型训练
+    for i in picture_type:
+        for j in model_type:
+            if (j == 'IF'):
+                model_training_IF(os.path.join(current_dir, 'storage/cache/test_imgs/normal_train'), i)
+            else:
+                model_training_HM(os.path.join(current_dir, 'storage/cache/test_imgs/normal_train'), i)
     
     
     # 模型评估
@@ -47,28 +47,7 @@ def main():
                     os.path.join(current_dir, 'storage/best_model/HM_model'), 'HM')
     shutil.rmtree(dataset['abnormal_augmented'])
     shutil.rmtree(test_imgs)
-    
     return
 
-# 训练模型是IF, 图像模型是RGB
-# {'TP': 22, 'TN': 23, 'FP': 3, 'FN': 3}
-# A = 0.8823529411764706, P = 0.88, R = 0.88, F = 0.88, MCC = 505.98615384615385
-
-
-# 训练模型是IF, 图像模型是HSV
-# {'TP': 20, 'TN': 26, 'FP': 0, 'FN': 5}
-# A = 0.9019607843137255, P = 1.0, R = 0.8, F = 0.888888888888889, MCC = 520.0
-
-
-# 训练模型是HM, 图像模型是RGB
-# {'TP': 13, 'TN': 21, 'FP': 5, 'FN': 12}
-# A = 0.6666666666666666, P = 0.7222222222222222, R = 0.52, F = 0.6046511627906976, MCC = 272.90343909008294
-
-
-# 训练模型是HM, 图像模型是HSV
-# {'TP': 22, 'TN': 21, 'FP': 5, 'FN': 3}
-# A = 0.8431372549019608, P = 0.8148148148148148, R = 0.88, F = 0.8461538461538461, MCC = 461.97688749182396
 if __name__ == '__main__':
-    # for i in range(100):
-        # print(i)
     main()
